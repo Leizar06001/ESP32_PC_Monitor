@@ -115,7 +115,7 @@ int main (int argc, char *argv[]){
 
 
             strToSerial += "\n";
-            if (!writeDataToSerial(hSerial, strToSerial.c_str())) {
+            if (!writeDataToSerial(hSerial, strToSerial.c_str(), 0)) {
                 closeSerialPort(hSerial);
                 return 1;
             }
