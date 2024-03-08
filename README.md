@@ -15,7 +15,7 @@ Check "User_Setup.h"
 The code can be adapted to whatever you need
 
 ### Windows
-Compile :
+Compile from "srcs" :
 `g++ main.cpp aida.cpp serial.cpp -o esp_aida`
 And run .exe from cmd
 
