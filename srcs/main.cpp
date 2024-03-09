@@ -36,7 +36,6 @@ int main (int argc, char *argv[]){
         debug = atoi(argv[2]);
     }
     const char* portName = argv[1];
-    const char* data = "Hello, Serial!\n";
 
     while (!stopFlag){
         cout << "Opening serial port " << portName << endl;

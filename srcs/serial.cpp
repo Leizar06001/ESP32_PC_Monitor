@@ -1,10 +1,31 @@
 #include "main.hpp"
 
 HANDLE openSerialPort(const char* portName) {
-    HANDLE hSerial = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hSerial == INVALID_HANDLE_VALUE) {
-        std::cerr << "Error opening serial port." << std::endl;
+#ifdef UNICODE
+    // Convert the port name to a wide character string
+    std::wstring widePortName;
+    int numChars = MultiByteToWideChar(CP_UTF8, 0, portName, -1, NULL, 0);
+    if (numChars > 0) {
+        widePortName.resize(numChars);
+        MultiByteToWideChar(CP_UTF8, 0, portName, -1, &widePortName[0], numChars);
+    } else {
+        std::cerr << "Error: Failed to convert port name to wide character string." << std::endl;
+        return nullptr;
     }
+
+    // Open the serial port using the wide character string version of CreateFile
+    HANDLE hSerial = CreateFileW(widePortName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+#else
+    // Open the serial port using the ASCII version of CreateFile
+    HANDLE hSerial = CreateFileA(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+#endif
+
+    if (hSerial == INVALID_HANDLE_VALUE) {
+        DWORD errorCode = GetLastError();
+        std::cerr << "Error: Failed to open serial port (" << portName << "). Error code: " << errorCode << std::endl;
+        return nullptr;
+    }
+
     return hSerial;
 }
 
@@ -57,3 +78,5 @@ bool writeDataToSerial(HANDLE hSerial, const char* data, bool debug) {
 void closeSerialPort(HANDLE hSerial) {
     CloseHandle(hSerial);
 }
+
+
