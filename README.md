@@ -24,3 +24,5 @@ And run .exe from cmd
 ### Work in progress....
 
 <img src="preview.jpg" width="350"/>
+
+<img src="preview2.jpg" width="350"/>
