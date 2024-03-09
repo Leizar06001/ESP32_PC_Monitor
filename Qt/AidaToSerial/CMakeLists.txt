@@ -25,7 +25,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         serial.cpp
         main.hpp
-        regscan.cpp
+
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET AidaToSerial APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
