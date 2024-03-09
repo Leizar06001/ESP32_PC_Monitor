@@ -1,11 +1,12 @@
 #include <TFT_eSPI.h>
-// #include <LiquidCrystal.h>
+#include <LiquidCrystal.h>
 
 #include <map>
 
+#define LCD_BACK 40
 
 TFT_eSPI tft = TFT_eSPI();
-// LiquidCrystal LCD(4, 16, 17, 5, 18, 19);
+LiquidCrystal LCD(4, 16, 17, 5, 18, 19);
 
 int test = 0;
 
@@ -42,81 +43,98 @@ void setup() {
   tft.setRotation(1);
   tft.fillScreen(TFT_BLACK);
 
-  // LCD.begin(16, 2);
-  // LCD.clear();
+  LCD.begin(16, 2);
+  LCD.clear();
 
   Serial.begin(115200);
   
-  // LCD.setCursor(0, 0);
-  // LCD.print("Hello");
+  LCD.setCursor(0, 0);
+  LCD.print("Awaiting data...");
   
-  delay(2000);
+  delay(1000);
   drawBackground();
-  // for(int i = 0; i < 100; ++i){
-  //   drawGauge(100, 100, 55, i * 0.01, 30, 330, TFT_BLUE, TFT_DARKGREY);
-  //   delay(100);
-  // }  
 }
 
 std::map<String, String> readSerial();
 
 void loop() {
-  if (Serial.available() > 0){
-    std::map<String, String> datas = readSerial();
-    drawUI(datas);
+  std::map<String, String> prev;
+  while (1) {
+    if (Serial.available() > 0){
+      std::map<String, String> datas = readSerial();
+      drawUI(datas, prev);
+      LCD.setCursor(0, 0);
+      LCD.print("    " + datas["time"] + "    ");
+      prev = datas;
+    }
+    delay(20);
   }
-  delay(100);
-
 }
 
-void drawUI(std::map<String, String> datas){
-
-  drawPercGauge(79, 60, 45, datas["CPUuse"], 40, 320, interpolateColors(datas["CPUuse"].toInt() * 0.01, 0x7bdf, TFT_RED), TFT_DDARKGREY);
-  tftText(59, 57, 7, 1, 1, TFT_CYAN, datas["CPUpower"] + " W");
-  tftVBar(136, 20, 10, 65, datas["CPUtemp"].toInt() / 90.0, interpolateColors(datas["CPUtemp"].toInt() / 90.0, TFT_GREEN, TFT_RED));
-  tftText(134, 90, 2, 1, 1, TFT_CYAN, datas["CPUtemp"]);
-
-  tftText(10, 111, 15, 1, 1, TFT_CYAN, "Clock: " + datas["CPUclock"] + " MHz");
-  drawFanGauge(23, 28, 16, datas["CPUfan"], 0, 225, interpolateColors(datas["CPUfan"].toInt() * 0.0005, 0x7bdf, 0xd3df), TFT_DDARKGREY);
-
-
-  drawPercGauge(241, 60, 45, datas["GPUuse"], 40, 320, interpolateColors(datas["GPUuse"].toInt() * 0.01, 0x7bdf, TFT_RED), TFT_DDARKGREY);
-  tftText(221, 57, 7, 1, 1, TFT_CYAN, datas["GPUpower"] + " W");
-  tftVBar(174, 20, 10, 65, datas["GPUhot"].toInt() / 90.0, interpolateColors(datas["GPUhot"].toInt() / 90.0, TFT_GREEN, TFT_RED));
-  tftText(172, 90, 2, 1, 1, TFT_CYAN, datas["GPUhot"]);
-
-  tftText(172, 111, 15, 1, 1, TFT_CYAN, "Clock: " + datas["GPUclock"] + " MHz");
-  drawFanGauge(297, 28, 16, datas["GPUfan"], 135, 360, interpolateColors(datas["GPUfan"].toInt() * 0.0005, 0x7bdf, 0xd3df), TFT_DDARKGREY);
+void drawUI(std::map<String, String> datas, std::map<String, String> prev){
+  if (datas["CPUuse"] != prev["CPUuse"])
+    drawPercGauge(79, 66, 45, datas["CPUuse"], 40, 320, interpolateColors(datas["CPUuse"].toInt() * 0.01, 0x7bdf, TFT_RED), TFT_DDARKGREY);
+  if (datas["CPUpower"] != prev["CPUpower"])
+    tftText(65, 65, 5, 1, 1, TFT_CYAN, datas["CPUpower"] + " W");
+  
+  if (datas["GPUuse"] != prev["GPUuse"])
+    drawPercGauge(241, 66, 45, datas["GPUuse"], 40, 320, interpolateColors(datas["GPUuse"].toInt() * 0.01, 0x7bdf, TFT_RED), TFT_DDARKGREY);
+  if (datas["GPUpower"] != prev["GPUpower"])
+    tftText(227, 65, 5, 1, 1, TFT_CYAN, datas["GPUpower"] + " W");
 
 
-  tftHBar(10, 157, 90, 10, datas["RAMuse"].toInt() / 16000.0, interpolateColors(datas["RAMuse"].toInt() / 16000.0, 0x7bdf, 0xd3df));
-  tftText(110, 159, 5, 1, 1, TFT_CYAN, datas["RAMuse"]);
+  if (datas["CPUtemp"] != prev["CPUtemp"]){
+    tftVBar(134, 26, 10, 65, datas["CPUtemp"].toInt() / 90.0, interpolateColors(datas["CPUtemp"].toInt() / 90.0, 0x7bdf, TFT_RED));
+    tftText(133, 96, 2, 1, 1, TFT_CYAN, datas["CPUtemp"]);
+  }
+  if (datas["GPUhot"] != prev["GPUhot"]){
+    tftVBar(176, 26, 10, 65, (datas["GPUhot"].toInt() - 8) / 90.0, interpolateColors((datas["GPUhot"].toInt() - 8) / 90.0, 0x7bdf, TFT_RED));
+    tftText(175, 96, 2, 1, 1, TFT_CYAN, String(datas["GPUhot"].toInt() - 8));
+  }
 
-  tftHBar(172, 157, 90, 10, datas["GPUmem"].toInt() / 16000.0, interpolateColors(datas["GPUmem"].toInt() / 16000.0, 0x7bdf, 0xd3df));
-  tftText(272, 159, 5, 1, 1, TFT_CYAN, datas["GPUmem"]);
+  if (datas["CPUclock"] != prev["CPUclock"])
+    tftText(10, 123, 15, 1, 1, TFT_CYAN, "Clock: " + datas["CPUclock"] + " MHz");
+  if (datas["GPUclock"] != prev["GPUclock"])
+    tftText(172, 123, 15, 1, 1, TFT_CYAN, "Clock: " + datas["GPUclock"] + " MHz");
 
-  drawFans(datas);
+  if (datas["CPUfan"] != prev["CPUfan"])
+    drawFanGauge(25, 32, 19, datas["CPUfan"], 0, 225, interpolateColors(datas["CPUfan"].toInt() * 0.0005, 0x7bdf, 0xd3df), TFT_DDARKGREY);
+  if (datas["GPUfan"] != prev["GPUfan"])
+    drawFanRevGauge(295, 32, 19, datas["GPUfan"], 135, 360, interpolateColors(datas["GPUfan"].toInt() * 0.0005, 0x7bdf, 0xd3df), TFT_DDARKGREY);
+  
+
+  if (datas["RAMuse"] != prev["RAMuse"]){
+    tftHBar(10, 163, 90, 10, datas["RAMuse"].toInt() / 16000.0, interpolateColors(datas["RAMuse"].toInt() / 16000.0, 0x7bdf, TFT_RED));
+    tftText(110, 165, 7, 1, 1, TFT_CYAN, datas["RAMuse"] + " M");
+  }
+
+  if (datas["GPUmem"] != prev["GPUmem"]){
+    tftHBar(172, 163, 90, 10, datas["GPUmem"].toInt() / 16000.0, interpolateColors(datas["GPUmem"].toInt() / 16000.0, 0x7bdf, TFT_RED));
+    tftText(272, 165, 7, 1, 1, TFT_CYAN, datas["GPUmem"] + " M");
+  }
+
+  drawFans(datas, prev);
 }
 
 void drawBackground() {
   // CPU
-  tft.drawRoundRect(0, 4, 158, 135, 6, TFT_CYAN);
+  tft.drawRoundRect(0, 4, 158, 141, 5, TFT_CYAN);
   tftText(15, 0, 11, 1, 1, TFT_CYAN, "Ryzen 5600x");
 
   // RAM
-  tft.drawRoundRect(0, 145, 158, 30, 6, TFT_CYAN);
-  tftText(15, 141, 3, 1, 1, TFT_CYAN, "RAM");
+  tft.drawRoundRect(0, 151, 158, 30, 5, TFT_CYAN);
+  tftText(15, 147, 3, 1, 1, TFT_CYAN, "RAM");
 
   // GPU
-  tft.drawRoundRect(162, 4, 158, 135, 6, TFT_CYAN);
+  tft.drawRoundRect(162, 4, 158, 141, 5, TFT_CYAN);
   tftText(177, 0, 7, 1, 1, TFT_CYAN, "RX 6800");
 
   // VRAM
-  tft.drawRoundRect(162, 145, 158, 30, 6, TFT_CYAN);
-  tftText(177, 141, 4, 1, 1, TFT_CYAN, "VRAM");
+  tft.drawRoundRect(162, 151, 158, 30, 5, TFT_CYAN);
+  tftText(177, 147, 4, 1, 1, TFT_CYAN, "VRAM");
 
   // FANS
-  tft.drawRoundRect(0, 179, 320, 61, 6, TFT_CYAN);
+  tft.drawRoundRect(0, 185, 320, 55, 5, TFT_CYAN);
   tftText(23, 227, 0, 0, 1, TFT_WHITE, "Mok");
   tftText(91, 227, 0, 0, 1, TFT_WHITE, "F1");
   tftText(155, 227, 0, 0, 1, TFT_WHITE, "F2");
@@ -124,12 +142,17 @@ void drawBackground() {
   tftText(277, 227, 0, 0, 1, TFT_WHITE, "Back");
 }
 
-void drawFans(std::map<String, String> datas){
-  drawFanGauge(32, 213, 29, datas["FAN1"], 50, 310, interpolateColors(datas["FAN1"].toInt() * 0.0005, 0x7bdf, 0xd3df), TFT_DDARKGREY);
-  drawFanGauge(96, 213, 29, datas["FAN3"], 50, 310, interpolateColors(datas["FAN3"].toInt() * 0.0005, 0x7bdf, 0xd3df), TFT_DDARKGREY);
-  drawFanGauge(160, 213, 29, datas["FAN4"], 50, 310, interpolateColors(datas["FAN4"].toInt() * 0.0005, 0x7bdf, 0xd3df), TFT_DDARKGREY);
-  drawFanGauge(224, 213, 29, datas["FAN5"], 50, 310, interpolateColors(datas["FAN5"].toInt() * 0.0005, 0x7bdf, 0xd3df), TFT_DDARKGREY);
-  drawFanGauge(288, 213, 29, datas["FAN6"], 50, 310, interpolateColors(datas["FAN6"].toInt() * 0.0005, 0x7bdf, 0xd3df), TFT_DDARKGREY);
+void drawFans(std::map<String, String> datas, std::map<String, String> prev){
+  if (datas["FAN1"] != prev["FAN1"])
+    drawFanGauge(32, 217, 26, datas["FAN1"], 50, 310, interpolateColors(datas["FAN1"].toInt() * 0.0005, TFT_BLUE, TFT_CYAN), TFT_DDARKGREY);
+  if (datas["FAN3"] != prev["FAN3"])
+    drawFanGauge(96, 217, 26, datas["FAN3"], 50, 310, interpolateColors(datas["FAN3"].toInt() * 0.0005, TFT_BLUE, TFT_CYAN), TFT_DDARKGREY);
+  if (datas["FAN4"] != prev["FAN4"])
+    drawFanGauge(160, 217, 26, datas["FAN4"], 50, 310, interpolateColors(datas["FAN4"].toInt() * 0.0005, TFT_BLUE, TFT_CYAN), TFT_DDARKGREY);
+  if (datas["FAN5"] != prev["FAN5"])
+    drawFanGauge(224, 217, 26, datas["FAN5"], 50, 310, interpolateColors(datas["FAN5"].toInt() * 0.0005, TFT_BLUE, TFT_CYAN), TFT_DDARKGREY);
+  if (datas["FAN6"] != prev["FAN6"])
+    drawFanGauge(288, 217, 26, datas["FAN6"], 50, 310, interpolateColors(datas["FAN6"].toInt() * 0.0005, TFT_BLUE, TFT_CYAN), TFT_DDARKGREY);
 }
 
 void drawFanGauge(int x, int y, int radius, String value, float startAngle, float endAngle, uint32_t gaugeColor, uint32_t bgColor) {
@@ -140,9 +163,24 @@ void drawFanGauge(int x, int y, int radius, String value, float startAngle, floa
   float angle = startAngle + (angleRange * calc_val);
   angle = fminf(fmaxf(angle, startAngle), endAngle); // Clamp angle within range
 
-  tftText(x - 10, y - 3, 4, 1, 1, TFT_WHITE, value);
+  int len = value.length() * 3;
+  tftCenterText(x, y - 3, 4, 1, 1, TFT_CYAN, value);
   tft.drawSmoothArc(x, y, radius, radius * 0.75, startAngle, endAngle, bgColor, bgColor, 1);
   tft.drawSmoothArc(x, y, radius, radius * 0.75, startAngle, angle, gaugeColor, bgColor, 1);
+}
+
+void drawFanRevGauge(int x, int y, int radius, String value, float startAngle, float endAngle, uint32_t gaugeColor, uint32_t bgColor) {
+  float calc_val = value.toInt() / 1800.0;
+  if (calc_val <= 0) calc_val = 0.01;
+
+  float angleRange = endAngle - startAngle;
+  float angle = endAngle - (angleRange * calc_val);
+  angle = fminf(fmaxf(angle, startAngle), endAngle); // Clamp angle within range
+
+  int len = value.length() * 3;
+  tftCenterText(x, y - 3, 4, 1, 1, TFT_CYAN, value);
+  tft.drawSmoothArc(x, y, radius, radius * 0.75, startAngle, endAngle, bgColor, bgColor, 1);
+  tft.drawSmoothArc(x, y, radius, radius * 0.75, angle, endAngle, gaugeColor, bgColor, 1);
 }
 
 void drawPercGauge(int x, int y, int radius, String value, float startAngle, float endAngle, uint32_t gaugeColor, uint32_t bgColor) {
@@ -153,7 +191,8 @@ void drawPercGauge(int x, int y, int radius, String value, float startAngle, flo
   float angle = startAngle + (angleRange * calc_val);
   angle = fminf(fmaxf(angle, startAngle), endAngle); // Clamp angle within range
 
-  tftText(x - 7, y + radius * 0.7, 3, 1, 1, TFT_WHITE, value);
+  int len = value.length() * 3;
+  tftText(x - len, y + radius * 0.7, 3, 1, 1, TFT_WHITE, value);
   tft.drawSmoothArc(x, y, radius, radius * 0.75, startAngle, endAngle, bgColor, bgColor, 1);
   tft.drawSmoothArc(x, y, radius, radius * 0.75, startAngle, angle, gaugeColor, bgColor, 1);
 }
@@ -173,8 +212,16 @@ void tftVBar(int x, int y, int w, int h, float val, int color){
 void tftText(int x, int y, int w, int h, int size, int color, String str){
   tft.setTextColor(color);
   tft.setTextSize(size);
-  tft.fillRect(x - 2, y, w * 7 * size, h * 7 * size, TFT_BLACK);
+  tft.fillRect(x - 3, y, w * 7 * size, h * 7 * size, TFT_BLACK);
   tft.setCursor(x, y);
+  tft.print(str);
+}
+
+void tftCenterText(int x, int y, int w, int h, int size, int color, String str){
+  tft.setTextColor(color);
+  tft.setTextSize(size);
+  tft.fillRect(x - w * 3, y, w * 6.5 * size, h * 7 * size, TFT_BLACK);
+  tft.setCursor(x - str.length() * 3, y);
   tft.print(str);
 }
 
@@ -204,17 +251,17 @@ std::map<String, String> readSerial() {
 
 void initDisplays() {
   // // TFT BACKLIGHT
-  // ledcSetup(0, 1000, 8);
-  // ledcAttachPin(14, 0);
-  // ledcWrite(0, 255);
+  ledcSetup(0, 1000, 8);
+  ledcAttachPin(14, 0);
+  ledcWrite(0, 255);
   // LCD BACKLIGHT
-  // ledcSetup(2, 1000, 8);
-  // ledcAttachPin(21, 2);
-  // ledcWrite(2, 100);
+  ledcSetup(2, 1000, 8);
+  ledcAttachPin(21, 2);
+  ledcWrite(2, LCD_BACK);
   // // LCD CONTRAST
-  // ledcSetup(1, 1000, 8);
-  // ledcAttachPin(15, 1);
-  // ledcWrite(1, 80);
+  ledcSetup(1, 1000, 8);
+  ledcAttachPin(15, 1);
+  ledcWrite(1, 80);
 }
 
 uint16_t RGBToColor(uint8_t r, uint8_t g, uint8_t b) {
