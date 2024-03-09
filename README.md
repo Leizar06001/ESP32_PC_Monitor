@@ -17,9 +17,12 @@ The code can be adapted to whatever you need
 ### Windows
 Compile from "srcs" :
 `g++ main.cpp aida.cpp serial.cpp -o esp_aida`
-And run .exe from cmd
 
+And run .exe from cmd
+`esp_aida.exe COM3 [debug=0/1]`
 
 ### Work in progress....
 
 <img src="preview.jpg" width="350"/>
+
+<img src="preview2.jpg" width="350"/>
