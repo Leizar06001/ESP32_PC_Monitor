@@ -11,6 +11,19 @@ void signalHandler(int signum) {
     }
 }
 
+void error() {
+    cout << "Retry in 5 sec..." << endl;
+    Sleep(5000);
+}
+
+void prtDatas(std::map<std::string, std::string> data, string name){
+    std::cout << "*** " << name << " Data ***" << std::endl;
+    for (const auto& d : data) {
+        std::cout << d.first << ": " << d.second << std::endl;
+    }
+    cout << endl;
+}
+
 int main (int argc, char *argv[]){
     signal(SIGINT, signalHandler);
 
@@ -18,116 +31,99 @@ int main (int argc, char *argv[]){
         cout << "Usage: " << argv[0] << " <COM port>" << endl;
         return 1;
     }
+    int debug = 0;
+    if (argc > 2) {
+        debug = atoi(argv[2]);
+    }
     const char* portName = argv[1];
     const char* data = "Hello, Serial!\n";
 
-    HANDLE hSerial = openSerialPort(portName);
-    if (hSerial == INVALID_HANDLE_VALUE) {
-        return 1;
-    }
-    if (!configureSerialPort(hSerial)) {
-        closeSerialPort(hSerial);
-        return 1;
-    }
+    while (!stopFlag){
+        cout << "Opening serial port " << portName << endl;
+        HANDLE hSerial = openSerialPort(portName);
+        if (hSerial == INVALID_HANDLE_VALUE) {
+            error();
+            continue;
+        }
+        if (!configureSerialPort(hSerial)) {
+            closeSerialPort(hSerial);
+            error();
+            continue;
+        }
 
-    char buffer[4096];
-    while (!stopFlag) {
-        if (ExtApp_SharedMem_ReadBuffer(buffer, sizeof(buffer))) {
+        char buffer[4096];
+        string prev(buffer);
+        cout << ">> Connected, sending data !" << endl;
+        while (!stopFlag) {
+            if (ExtApp_SharedMem_ReadBuffer(buffer, sizeof(buffer))) {
 
-            std::string input(buffer);
-            // cout << buffer << endl << endl;
+                std::string input(buffer);
+                if (0)
+                    cout << buffer << endl << endl;
+                if (input != prev){
+                    prev = input;
+                    std::map<std::string, std::string> tempData = parseSensorData(input, "temp");
+                    std::map<std::string, std::string> fanData = parseSensorData(input, "fan");
+                    std::map<std::string, std::string> pwrData = parseSensorData(input, "pwr");
+                    std::map<std::string, std::string> dutyData = parseSensorData(input, "duty");
+                    std::map<std::string, std::string> voltData = parseSensorData(input, "volt");
+                    std::map<std::string, std::string> currData = parseSensorData(input, "curr");
+                    std::map<std::string, std::string> sysData = parseSensorData(input, "sys");
 
-            std::map<std::string, std::string> tempData = parseSensorData(input, "temp");
-            std::map<std::string, std::string> fanData = parseSensorData(input, "fan");
-            std::map<std::string, std::string> pwrData = parseSensorData(input, "pwr");
-            std::map<std::string, std::string> dutyData = parseSensorData(input, "duty");
-            std::map<std::string, std::string> voltData = parseSensorData(input, "volt");
-            std::map<std::string, std::string> currData = parseSensorData(input, "curr");
-            std::map<std::string, std::string> sysData = parseSensorData(input, "sys");
+                    // Print system data
+                    if (debug){
+                        prtDatas(sysData, "Sys");
+                        prtDatas(tempData, "Temp");
+                        prtDatas(fanData, "Fan");
+                        prtDatas(pwrData, "Pwr");
+                        prtDatas(dutyData, "Duty");
+                        prtDatas(voltData, "Volt");
+                        prtDatas(currData, "Curr");
+                    }
 
+                    string strToSerial = "time:" + sysData["Time"] + ";";
 
-            // std::cout << "Sys Data:" << std::endl;
-            // for (const auto& data : sysData) {
-            //     std::cout << data.first << ": " << data.second << std::endl;
-            // }
+                    strToSerial += "CPUuse:" + sysData["CPU Utilization"] + ";";
+                    strToSerial += "CPUclock:" + sysData["CPU Clock"] + ";";
+                    strToSerial += "CPUtemp:" + tempData["CPU"] + ";";
+                    strToSerial += "CPUfan:" + fanData["CPU"] + ";";
+                    strToSerial += "CPUpump:" + fanData["Water Pump"] + ";";
+                    strToSerial += "CPUpower:" + pwrData["CPU Package"] + ";";
 
-            // std::cout << "\nTemperature Data:" << std::endl;
-            // for (const auto& data : tempData) {
-            //     std::cout << data.first << ": " << data.second << std::endl;
-            // }
+                    strToSerial += "GPUuse:" + sysData["GPU Utilization"] + ";";
+                    strToSerial += "GPUclock:" + sysData["GPU Clock"] + ";";
+                    strToSerial += "GPUtemp:" + tempData["GPU"] + ";";
+                    strToSerial += "GPUhot:" + tempData["GPU Hotspot"] + ";";
+                    strToSerial += "GPUfan:" + fanData["GPU"] + ";";
+                    strToSerial += "GPUpower:" + pwrData["GPU"] + ";";
+                    strToSerial += "GPUmem:" + sysData["GPU Used Dedicated Memory"] + ";";
 
-            // // Print fan data
-            // std::cout << "\nFan Data:" << std::endl;
-            // for (const auto& data : fanData) {
-            //     std::cout << data.first << ": " << data.second << std::endl;
-            // }
+                    strToSerial += "RAMuse:" + sysData["Used Memory"] + ";";
+                    strToSerial += "RAMclock:" + sysData["Memory Clock"] + ";";
 
-            // // Print power data
-            // std::cout << "\nPower Data:" << std::endl;
-            // for (const auto& data : pwrData) {
-            //     std::cout << data.first << ": " << data.second << std::endl;
-            // }
+                    strToSerial += "MBtemp:" + tempData["Motherboard"] + ";";
+                    strToSerial += "FAN1:" + fanData["Chassis #1"] + ";";
+                    strToSerial += "FAN3:" + fanData["Chassis #3"] + ";";
+                    strToSerial += "FAN4:" + fanData["Chassis #4"] + ";";
+                    strToSerial += "FAN5:" + fanData["Chassis #5"] + ";";
+                    strToSerial += "FAN6:" + fanData["Chassis #6"] + ";";
 
-            // // Print duty data
-            // std::cout << "\nDuty Data:" << std::endl;
-            // for (const auto& data : dutyData) {
-            //     std::cout << data.first << ": " << data.second << std::endl;
-            // }
+                    strToSerial += "\n";
 
-            // // Print voltage data
-            // std::cout << "\nVoltage Data:" << std::endl;
-            // for (const auto& data : voltData) {
-            //     std::cout << data.first << ": " << data.second << std::endl;
-            // }
-
-            // // Print current data
-            // std::cout << "\nCurrent Data:" << std::endl;
-            // for (const auto& data : currData) {
-            //     std::cout << data.first << ": " << data.second << std::endl;
-            // }
-
-            string strToSerial = "time:" + sysData["Time"] + ";";
-
-            strToSerial += "CPUuse:" + sysData["CPU Utilization"] + ";";
-            strToSerial += "CPUclock:" + sysData["CPU Clock"] + ";";
-            strToSerial += "CPUtemp:" + tempData["CPU"] + ";";
-            strToSerial += "CPUfan:" + fanData["CPU"] + ";";
-            strToSerial += "CPUpump:" + fanData["Water Pump"] + ";";
-            strToSerial += "CPUpower:" + pwrData["CPU Package"] + ";";
-
-            strToSerial += "GPUuse:" + sysData["GPU Utilization"] + ";";
-            strToSerial += "GPUclock:" + sysData["GPU Clock"] + ";";
-            strToSerial += "GPUtemp:" + tempData["GPU"] + ";";
-            strToSerial += "GPUhot:" + tempData["GPU Hotspot"] + ";";
-            strToSerial += "GPUfan:" + fanData["GPU"] + ";";
-            strToSerial += "GPUpower:" + pwrData["GPU"] + ";";
-            strToSerial += "GPUmem:" + sysData["GPU Used Dedicated Memory"] + ";";
-
-            strToSerial += "RAMuse:" + sysData["Used Memory"] + ";";
-            strToSerial += "RAMclock:" + sysData["Memory Clock"] + ";";
-
-            strToSerial += "MBtemp:" + tempData["Motherboard"] + ";";
-            strToSerial += "FAN1:" + fanData["Chassis #1"] + ";";
-            strToSerial += "FAN3:" + fanData["Chassis #3"] + ";";
-            strToSerial += "FAN4:" + fanData["Chassis #4"] + ";";
-            strToSerial += "FAN5:" + fanData["Chassis #5"] + ";";
-            strToSerial += "FAN6:" + fanData["Chassis #6"] + ";";
-
-
-            strToSerial += "\n";
-            if (!writeDataToSerial(hSerial, strToSerial.c_str(), 0)) {
-                closeSerialPort(hSerial);
-                return 1;
+                    if (!writeDataToSerial(hSerial, strToSerial.c_str(), debug)) {
+                        closeSerialPort(hSerial);
+                        error();
+                        break;
+                    }
+                    if (debug)
+                        std::cout << "***********************************************" << std::endl;
+                }
             }
 
+            Sleep(200);
         }
-        // std::cout << "***********************************************" << std::endl;
-
-
-        Sleep(500);
+        closeSerialPort(hSerial);
     }
-
-    closeSerialPort(hSerial);
 
     return 0;
 }
