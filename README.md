@@ -18,7 +18,7 @@ The code can be adapted to whatever you need
 Compile from "srcs" :
 `g++ main.cpp aida.cpp serial.cpp -o esp_aida`
 And run .exe from cmd
-
+`esp_aida.exe COM3 [debug=0/1]`
 
 ### Work in progress....
 
