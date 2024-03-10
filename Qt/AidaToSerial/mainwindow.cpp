@@ -223,6 +223,8 @@ void MainWindow::handleWorkFinished(){
     ui->btnStart->setEnabled(true);
     ui->boxPorts->setEnabled(true);
     ui->boxUpdate->setEnabled(true);
+    ui->lblStatus->setText("Stopped");
+    ui->lblStatus->setStyleSheet("color: yellow");
 
     QAction *statusAction = trayMenu->actions().at(0);
     if (statusAction)
@@ -241,11 +243,13 @@ void MainWindow::handleSerialStatus(bool connected){
 
     if (connected){
         ui->lblStatus->setText("Connected to " + ui->boxPorts->currentText() + ", sending..");
+        ui->lblStatus->setStyleSheet("color: green");
         ui->miniTerm->append(timestamp() + "Connection established");
         if (statusAction)
             statusAction->setText("Status: Connected");
     } else {
-        ui->lblStatus->setText("Disconnected");
+        ui->lblStatus->setText("Disconnected, retry..");
+        ui->lblStatus->setStyleSheet("color: red");
         ui->miniTerm->append(timestamp() + "Disconnected, retry in 5s..");
         if (statusAction)
             statusAction->setText("Status: Connecting..");
