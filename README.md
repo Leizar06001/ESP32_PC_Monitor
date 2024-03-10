@@ -40,4 +40,4 @@ CPUfan:650;CPUpower:40;CPUtemp:55;CPUuse:35; ..... ;RAMuse:8650;\n
 
 <img src="preview.jpg" width="350"/>
 
-<img src="preview2.jpg" width="350"/>
+<img src="preview3.jpg" width="350"/>
