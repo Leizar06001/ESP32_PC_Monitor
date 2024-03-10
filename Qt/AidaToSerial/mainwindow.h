@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "worker.h"
 #include <QLabel>
+#include <QSystemTrayIcon>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -18,22 +19,36 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    void showNormal();
+    void connectTray();
+    void disconnectTray();
 
 private slots:
+    void onTrayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void handleResults(const std::string &result);
     void handleWorkFinished();
     void handleWorkStarted();
+    void handleSerialStatus(bool connected);
+
     void onStartButtonClicked();
     void onStopButtonClicked();
     void onUpdateList();
     void onAccept();
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow  *ui;
+    QSystemTrayIcon *trayIcon;
+    QMenu           *trayMenu;
 
     void            setPortsList();
     const QString   timestamp();
     void            initSensorSerials();
+    void            createNewWorker();
+    void            saveSettings();
+    void            loadSettings();
 
     Worker *worker;
     std::map<std::string, QLabel*> sensorLabels;

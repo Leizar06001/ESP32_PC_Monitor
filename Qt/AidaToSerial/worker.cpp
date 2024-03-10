@@ -14,9 +14,11 @@ void Worker::updateDatas() {
     while (!m_pendingDelete){
         if (!connectSerial()){
             qDebug() << "Error connecting to serial";
+            emit sendSerialStatus(false);
             QThread::sleep(5);
             continue ;
         }
+        emit sendSerialStatus(true);
         while (!m_pendingDelete){
             std::string prev(buffer);
 
@@ -45,6 +47,7 @@ void Worker::updateDatas() {
                         closeSerialPort(hSerial);
                         serialConnected = 0;
                         qDebug() << "Error sending to serial";
+                        emit sendSerialStatus(false);
                         QThread::sleep(5);
                         break;
                     }

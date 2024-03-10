@@ -19,6 +19,8 @@ signals:
     void resultReady(const string &result);
     void workFinished();
     void workStarted();
+    void sendSerialStatus(bool connected);
+    void sendStatus(const string &state);
 
 public slots:
     void startWork(map<string, string> sensSerialNames,

@@ -565,11 +565,22 @@
        </disabled>
       </palette>
      </property>
+     <property name="font">
+      <font>
+       <bold>true</bold>
+      </font>
+     </property>
      <property name="cursor">
       <cursorShape>PointingHandCursor</cursorShape>
      </property>
+     <property name="insertPolicy">
+      <enum>QComboBox::InsertAlphabetically</enum>
+     </property>
     </widget>
     <widget class="QSpinBox" name="boxUpdate">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>140</x>
@@ -581,6 +592,15 @@
      <property name="palette">
       <palette>
        <active>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>135</red>
+           <green>135</green>
+           <blue>135</blue>
+          </color>
+         </brush>
+        </colorrole>
         <colorrole role="Base">
          <brush brushstyle="SolidPattern">
           <color alpha="255">
@@ -592,6 +612,15 @@
         </colorrole>
        </active>
        <inactive>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>135</red>
+           <green>135</green>
+           <blue>135</blue>
+          </color>
+         </brush>
+        </colorrole>
         <colorrole role="Base">
          <brush brushstyle="SolidPattern">
           <color alpha="255">
@@ -602,14 +631,62 @@
          </brush>
         </colorrole>
        </inactive>
-       <disabled/>
+       <disabled>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>135</red>
+           <green>135</green>
+           <blue>135</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>135</red>
+           <green>135</green>
+           <blue>135</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Text">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>135</red>
+           <green>135</green>
+           <blue>135</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ButtonText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>135</red>
+           <green>135</green>
+           <blue>135</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </disabled>
       </palette>
+     </property>
+     <property name="font">
+      <font>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
      <property name="minimum">
       <number>100</number>
      </property>
      <property name="maximum">
       <number>10000</number>
+     </property>
+     <property name="singleStep">
+      <number>100</number>
      </property>
      <property name="value">
       <number>500</number>
@@ -832,12 +909,12 @@
     <property name="title">
      <string>Infos</string>
     </property>
-    <widget class="QLabel" name="label_5">
+    <widget class="QLabel" name="lblStatus">
      <property name="geometry">
       <rect>
        <x>80</x>
        <y>30</y>
-       <width>111</width>
+       <width>291</width>
        <height>21</height>
       </rect>
      </property>
@@ -1004,7 +1081,7 @@
     <property name="font">
      <font>
       <pointsize>10</pointsize>
-      <bold>true</bold>
+      <bold>false</bold>
      </font>
     </property>
     <property name="text">
@@ -1023,7 +1100,7 @@
     <property name="font">
      <font>
       <pointsize>10</pointsize>
-      <bold>true</bold>
+      <bold>false</bold>
      </font>
     </property>
     <property name="text">
@@ -1080,6 +1157,41 @@
     </property>
     <property name="text">
      <string>Send ?</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="boxTray">
+    <property name="geometry">
+     <rect>
+      <x>660</x>
+      <y>530</y>
+      <width>121</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Minimize to Tray</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="boxAutoconnect">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>510</x>
+      <y>530</y>
+      <width>121</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Connect at launch</string>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
     </property>
    </widget>
   </widget>

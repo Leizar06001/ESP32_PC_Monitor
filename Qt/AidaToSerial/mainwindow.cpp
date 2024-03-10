@@ -11,8 +11,13 @@
 #include <QLabel>
 #include <QScrollBar>
 #include <QLineEdit>
-#include "QCheckBox"
-#include "QThread"
+#include <QCheckBox>
+#include <QThread>
+#include <QMenu>
+#include <QAction>
+#include <QCloseEvent>
+#include <QSettings>
+#include <QFile>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -20,17 +25,30 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    initSensorSerials();
-    onUpdateList();
+    trayIcon = new QSystemTrayIcon(QIcon(":/icon.png"), this);
+    trayMenu = new QMenu();
 
-    worker = new Worker();
-    connect(worker, &Worker::resultReady, this, &MainWindow::handleResults);
-    connect(worker, &Worker::workStarted, this, &MainWindow::handleWorkStarted);
-    connect(worker, &Worker::workFinished, this, &MainWindow::handleWorkFinished);
-    connect(worker, &Worker::workFinished, this, [this](){ // Delete worker when work is finished
-        worker->deleteLater();
-        worker = nullptr;
-    });
+    QAction *showAction = new QAction("Show app", this);
+    QAction *connectAction = new QAction("Connect", this);
+    QAction *disconnectAction = new QAction("Disconnect", this);
+    QAction *quitAction = new QAction("Quit", this);
+    connect(showAction, &QAction::triggered, this, &MainWindow::showNormal);
+    connect(connectAction, &QAction::triggered, this, &MainWindow::connectTray);
+    connect(disconnectAction, &QAction::triggered, this, &MainWindow::disconnectTray);
+    connect(quitAction, &QAction::triggered, this, &QCoreApplication::quit);
+
+    trayMenu->addAction("Status: Disconnected");
+    trayMenu->addSeparator();
+    // trayMenu->addAction(connectAction);
+    // trayMenu->addAction(disconnectAction);
+    // trayMenu->addSeparator();
+    trayMenu->addAction(showAction);
+    trayMenu->addAction(quitAction);
+    trayIcon->setContextMenu(trayMenu);
+    connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::onTrayIconActivated);
+    trayIcon->show();
+
+    createNewWorker();
 
     connect(ui->btnScan, &QPushButton::clicked, this, &MainWindow::setPortsList);
     connect(ui->btnStart, &QPushButton::clicked, this, &MainWindow::onStartButtonClicked);
@@ -39,14 +57,60 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btnAccept, &QPushButton::clicked, this, &MainWindow::onAccept);
 
     setPortsList();
+    loadSettings();
+    onUpdateList();
+    if (ui->boxAutoconnect->isChecked())
+        onStartButtonClicked();
 }
 
 MainWindow::~MainWindow()
 {
+    saveSettings();
     delete ui;
     if (worker) {
         worker->deleteLater();
     }
+}
+
+void MainWindow::showNormal(){
+    QMainWindow::showNormal();
+}
+
+void MainWindow::onTrayIconActivated(QSystemTrayIcon::ActivationReason reason)
+{
+    switch (reason) {
+    case QSystemTrayIcon::Trigger:
+    case QSystemTrayIcon::DoubleClick:
+        if (isHidden()){
+            showNormal();
+            activateWindow();   // on top
+        } else
+            hide();
+        break;
+    default:
+        break;
+    }
+}
+
+void MainWindow::connectTray(){
+
+}
+
+void MainWindow::disconnectTray(){
+
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::WindowStateChange) {
+        if (windowState() & Qt::WindowMinimized) {
+            if (ui->boxTray->isChecked()){
+                hide();
+                event->ignore();  // Prevent the window from actually minimizing
+            }
+        }
+    }
+    QMainWindow::changeEvent(event);
 }
 
 void MainWindow::setPortsList() {
@@ -68,6 +132,20 @@ const QString MainWindow::timestamp(){
     return QString::fromStdString(time_str);
 }
 
+void MainWindow::createNewWorker() {
+    worker = new Worker();
+    connect(worker, &Worker::resultReady, this, &MainWindow::handleResults);
+    connect(worker, &Worker::workStarted, this, &MainWindow::handleWorkStarted);
+    connect(worker, &Worker::workFinished, this, &MainWindow::handleWorkFinished);
+    connect(worker, &Worker::workFinished, this, [this](){ // Delete worker when work is finished
+        if (worker) {
+            worker->deleteLater();
+            worker = nullptr;
+        }
+    });
+    connect(worker, &Worker::sendSerialStatus, this, &MainWindow::handleSerialStatus);
+}
+
 void MainWindow::onStartButtonClicked()
 {
     if (worker) {
@@ -79,16 +157,7 @@ void MainWindow::onStartButtonClicked()
     ui->btnStart->setEnabled(false);
 
     if (!worker) {
-        worker = new Worker();
-        connect(worker, &Worker::resultReady, this, &MainWindow::handleResults);
-        connect(worker, &Worker::workStarted, this, &MainWindow::handleWorkStarted);
-        connect(worker, &Worker::workFinished, this, &MainWindow::handleWorkFinished);
-        connect(worker, &Worker::workFinished, this, [this](){ // Delete worker when work is finished
-            if (worker) {
-                worker->deleteLater();
-                worker = nullptr;
-            }
-        });
+        createNewWorker();
     }
 
     // If worker is not fully deleted, wait for deletion
@@ -117,18 +186,40 @@ void MainWindow::handleWorkFinished(){
     qDebug() << "Signal Received Worker Finished";
     ui->btnStart->setEnabled(true);
     ui->boxPorts->setEnabled(true);
+    ui->boxUpdate->setEnabled(true);
+
+    QAction *statusAction = trayMenu->actions().at(0);
+    if (statusAction)
+        statusAction->setText("Status: Stopped");
 }
 
 void MainWindow::handleWorkStarted(){
     qDebug() << "Signal Received Worker Started";
     ui->btnStop->setEnabled(true);
     ui->boxPorts->setEnabled(false);
+    ui->boxUpdate->setEnabled(false);
+}
+
+void MainWindow::handleSerialStatus(bool connected){
+    QAction *statusAction = trayMenu->actions().at(0); // Assuming status is the first action
+
+    if (connected){
+        ui->lblStatus->setText("Connected to " + ui->boxPorts->currentText() + ", sending..");
+        ui->miniTerm->append(timestamp() + "Connection established");
+        if (statusAction)
+            statusAction->setText("Status: Connected");
+    } else {
+        ui->lblStatus->setText("Disconnected");
+        ui->miniTerm->append(timestamp() + "Disconnected, retry in 5s..");
+        if (statusAction)
+            statusAction->setText("Status: Connecting..");
+    }
 }
 
 void MainWindow::onUpdateList()
 {
     // Clear existing layout
-    if (QWidget *scrollWidget = ui->scrollArea->widget()) {
+    if (QWidget *scrollWidget = ui->scrollList->widget()) {
         delete scrollWidget;
     }
 
@@ -182,6 +273,7 @@ void MainWindow::onUpdateList()
 void MainWindow::onAccept(){
     // Send new datas to worker
     worker->getNewDatas(sensorsSerialNames, sensorsActive);
+    ui->miniTerm->append(timestamp() + "Settings updated !");
 }
 
 void MainWindow::handleResults(const std::string &result)
@@ -263,6 +355,62 @@ void MainWindow::handleResults(const std::string &result)
 
         // Ensure the scroll area updates its layout
         ui->scrollArea->widget()->adjustSize();
+    }
+
+}
+
+void MainWindow::saveSettings(){
+    QString filePath = QCoreApplication::applicationDirPath() + "/settings.ini";
+    QSettings settings(filePath, QSettings::IniFormat);
+
+    // Save settings to the file
+    settings.setValue("SerialPort", ui->boxPorts->currentText());
+    settings.setValue("RefreshRate", ui->boxUpdate->value());
+    settings.setValue("MinimizeToTray", ui->boxTray->isChecked());
+    settings.setValue("Autoconnect", ui->boxAutoconnect->isChecked());
+
+    settings.setValue("SensorCount", sensorsSerialNames.size());
+    int i = 0;
+    for(const auto & sensor : sensorsSerialNames){
+        QString sensorId = QString("Sensor_%1").arg(i);
+        settings.setValue(sensorId, QString::fromStdString(sensor.first));
+        settings.setValue(sensorId + "_serial", QString::fromStdString(sensor.second));
+        settings.setValue(sensorId + "_en", sensorsActive[sensor.first]);
+        ++i;
+    }
+    qDebug() << "Settings saved";
+    qDebug() << "Settings file location:" << settings.fileName();
+}
+
+void MainWindow::loadSettings(){
+    QString filePath = QCoreApplication::applicationDirPath() + "/settings.ini";
+    QSettings settings(filePath, QSettings::IniFormat);
+
+    if (QFile::exists(filePath)) {
+        qDebug() << "Load file settings";
+        ui->boxPorts->setCurrentText(settings.value("SerialPort").toString());
+        ui->boxUpdate->setValue(settings.value("RefreshRate", 500).toInt());
+        ui->boxTray->setChecked(settings.value("MinimizeToTray", 1).toBool());
+        ui->boxAutoconnect->setChecked(settings.value("Autoconnect", 1).toBool());
+
+        int sensorCount = settings.value("SensorCount", 0).toInt();
+
+        for (int i = 0; i < sensorCount; ++i) {
+            QString sensorId = QString("Sensor_%1").arg(i);
+            string sensorName = settings.value(sensorId).toString().toStdString();
+            string sensorSerial = settings.value(sensorId + "_serial", "").toString().toStdString();
+            bool sensorState = settings.value(sensorId + "_en", false).toBool();
+            sensorsSerialNames[sensorName] = sensorSerial;
+            sensorsActive[sensorName] = sensorState;
+
+            qDebug() << "Sensor Name:" << sensorName;
+            qDebug() << "Sensor Serial:" << sensorSerial;
+            qDebug() << "Sensor State:" << sensorState;
+        }
+
+    } else {
+        qDebug() << "Load default settings";
+        initSensorSerials();
     }
 
 }
