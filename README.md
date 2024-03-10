@@ -9,10 +9,10 @@ Then check the values you want to send to the monitor
 
 ### Arduino
 Compile the sketch for ESP32
-I use the TFT_eSPI lib that must be configured as you need
-Check "User_Setup.h"
+I use the TFT_eSPI lib that must be configured as you need, Check "User_Setup.h"
+I am using a Waveshare 320 x 240 tft display here and a LCD connected using SPI
 
-The code can be adapted to whatever you need
+The code will probably have to be adapted to your hardware, and the UI you wish yo have
 
 ## Windows
 Compile from "srcs" :
@@ -24,6 +24,7 @@ And run .exe from cmd
 ### Windows UI
 You might be able to use the UI I made using QT. It's my first app so it might have some bugs..
 Check in the releases
+
 <img src="winapp.png" width="500"/>
 
 ### Work in progress....
