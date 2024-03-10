@@ -78,10 +78,10 @@ bool Worker::connectSerial(){
     return 1;
 }
 
-bool Worker::sendToSerial(){
-
-
-    return 0;
+void Worker::getNewDatas(map<string, string> sensSerialNames,
+                         map<string, bool> sensActive){
+    sensorsSerialNames = sensSerialNames;
+    sensorsActive = sensActive;
 }
 
 void Worker::startWork(map<string, string> sensSerialNames,

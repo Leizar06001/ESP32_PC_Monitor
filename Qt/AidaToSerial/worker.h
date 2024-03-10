@@ -26,11 +26,11 @@ public slots:
                    string port,
                    int delay);
     void stopWork();
+    void getNewDatas(map<string, string> sensSerialNames,
+                     map<string, bool> sensActive);
 
 private:
     void updateDatas();
-
-    bool sendToSerial();
     bool connectSerial();
 
     bool m_isWorking = false;

@@ -180,7 +180,8 @@ void MainWindow::onUpdateList()
 }
 
 void MainWindow::onAccept(){
-
+    // Send new datas to worker
+    worker->getNewDatas(sensorsSerialNames, sensorsActive);
 }
 
 void MainWindow::handleResults(const std::string &result)
