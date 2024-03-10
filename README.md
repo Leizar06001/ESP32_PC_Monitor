@@ -14,12 +14,17 @@ Check "User_Setup.h"
 
 The code can be adapted to whatever you need
 
-### Windows
+## Windows
 Compile from "srcs" :
 `g++ main.cpp aida.cpp serial.cpp -o esp_aida`
 
 And run .exe from cmd
 `esp_aida.exe COM3 [debug=0/1]`
+
+### Windows UI
+You might be able to use the UI I made using QT. It's my first app so it might have some bugs..
+Check in the releases
+<img src="winapp.png" width="500"/>
 
 ### Work in progress....
 
