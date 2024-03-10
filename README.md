@@ -28,6 +28,7 @@ Check in the releases
 <img src="winapp.png" width="500"/>
 
 The program is configured to work with my arduino code, but you can modify the settings to your convenance
+
 Serial ID is the identifier that will be send to the serial datas, which is a string formatted like :
 CPUfan:650;CPUpower:40;CPUtemp:55;CPUuse:35; ..... ;RAMuse:8650;\n
 
