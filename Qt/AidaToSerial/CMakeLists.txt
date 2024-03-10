@@ -25,6 +25,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         serial.cpp
         main.hpp
+        aida.cpp
+        worker.h worker.cpp
+        serial.hpp
 
     )
 # Define target properties for Android with Qt 6 as:
