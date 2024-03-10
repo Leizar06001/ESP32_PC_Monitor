@@ -18,6 +18,7 @@
 #include <QCloseEvent>
 #include <QSettings>
 #include <QFile>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -46,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
     trayMenu->addAction(quitAction);
     trayIcon->setContextMenu(trayMenu);
     connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::onTrayIconActivated);
+    trayIcon->setToolTip("AidaToSerial");
     trayIcon->show();
 
     createNewWorker();
@@ -55,12 +57,23 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btnStop, &QPushButton::clicked, this, &MainWindow::onStopButtonClicked);
     connect(ui->btnUpdateList, &QPushButton::clicked, this, &MainWindow::onUpdateList);
     connect(ui->btnAccept, &QPushButton::clicked, this, &MainWindow::onAccept);
+    connect(ui->boxStartup, &QCheckBox::clicked, this, &MainWindow::onStartupCheck);
 
     setPortsList();
     loadSettings();
     onUpdateList();
+
     if (ui->boxAutoconnect->isChecked())
         onStartButtonClicked();
+
+    // Minimize at startup
+    if (isLaunchedAtStartup()) {
+        if (ui->boxTray->isChecked()){
+            QTimer::singleShot(100, this, &MainWindow::hide);
+        } else {
+            showMinimized();
+        }
+    }
 }
 
 MainWindow::~MainWindow()
@@ -70,6 +83,16 @@ MainWindow::~MainWindow()
     if (worker) {
         worker->deleteLater();
     }
+}
+
+bool MainWindow::isLaunchedAtStartup(){
+    QStringList args = QCoreApplication::arguments();
+    for (const QString &arg : args) {
+        if (arg == "-startup") {
+            return true;
+        }
+    }
+    return false;
 }
 
 void MainWindow::showNormal(){
@@ -111,6 +134,19 @@ void MainWindow::changeEvent(QEvent *event)
         }
     }
     QMainWindow::changeEvent(event);
+}
+
+void MainWindow::onStartupCheck(){
+    QString appName = "AidaToSerial";
+    if (ui->boxStartup->isChecked()){
+        QString appPath = QCoreApplication::applicationFilePath();
+        appPath.replace('/', '\\');
+        QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+        settings.setValue(appName, "\"" + appPath + "\"");
+    } else {
+        QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+        settings.remove(appName);
+    }
 }
 
 void MainWindow::setPortsList() {
@@ -368,6 +404,7 @@ void MainWindow::saveSettings(){
     settings.setValue("RefreshRate", ui->boxUpdate->value());
     settings.setValue("MinimizeToTray", ui->boxTray->isChecked());
     settings.setValue("Autoconnect", ui->boxAutoconnect->isChecked());
+    settings.setValue("AutoRun", ui->boxStartup->isChecked());
 
     settings.setValue("SensorCount", sensorsSerialNames.size());
     int i = 0;
@@ -391,7 +428,8 @@ void MainWindow::loadSettings(){
         ui->boxPorts->setCurrentText(settings.value("SerialPort").toString());
         ui->boxUpdate->setValue(settings.value("RefreshRate", 500).toInt());
         ui->boxTray->setChecked(settings.value("MinimizeToTray", 1).toBool());
-        ui->boxAutoconnect->setChecked(settings.value("Autoconnect", 1).toBool());
+        ui->boxAutoconnect->setChecked(settings.value("Autoconnect", 0).toBool());
+        ui->boxStartup->setChecked(settings.value("AutoRun", 0).toBool());
 
         int sensorCount = settings.value("SensorCount", 0).toInt();
 

@@ -34,6 +34,7 @@ private slots:
     void onStopButtonClicked();
     void onUpdateList();
     void onAccept();
+    void onStartupCheck();
 
 protected:
     void changeEvent(QEvent *event) override;
@@ -49,6 +50,7 @@ private:
     void            createNewWorker();
     void            saveSettings();
     void            loadSettings();
+    bool            isLaunchedAtStartup();
 
     Worker *worker;
     std::map<std::string, QLabel*> sensorLabels;

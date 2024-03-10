@@ -676,6 +676,9 @@
        <bold>true</bold>
       </font>
      </property>
+     <property name="toolTip">
+      <string>The frequency at which data is sent to seral</string>
+     </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
      </property>
@@ -775,6 +778,9 @@
        <width>71</width>
        <height>31</height>
       </rect>
+     </property>
+     <property name="toolTip">
+      <string>Scan for COM ports</string>
      </property>
      <property name="text">
       <string>Scan</string>
@@ -1084,6 +1090,9 @@
       <bold>false</bold>
      </font>
     </property>
+    <property name="toolTip">
+     <string>Update sensor list</string>
+    </property>
     <property name="text">
      <string>Check New Sensors</string>
     </property>
@@ -1103,6 +1112,9 @@
       <bold>false</bold>
      </font>
     </property>
+    <property name="toolTip">
+     <string>Confirm the changes made</string>
+    </property>
     <property name="text">
      <string>Accept Changes</string>
     </property>
@@ -1115,6 +1127,9 @@
       <width>171</width>
       <height>22</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>Show data read from Aida64</string>
     </property>
     <property name="text">
      <string>Live Input Data Visualization</string>
@@ -1181,14 +1196,39 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>510</x>
+      <x>400</x>
       <y>530</y>
       <width>121</width>
       <height>22</height>
      </rect>
     </property>
+    <property name="toolTip">
+     <string>Auto connect when starting the app</string>
+    </property>
     <property name="text">
      <string>Connect at launch</string>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="boxStartup">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>540</x>
+      <y>530</y>
+      <width>101</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Run when Windows starts</string>
+    </property>
+    <property name="text">
+     <string>Run at Startup</string>
     </property>
     <property name="checked">
      <bool>false</bool>
